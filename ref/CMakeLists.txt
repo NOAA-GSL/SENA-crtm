@@ -16,7 +16,6 @@ enable_testing()
 include(${PROJECT_NAME}_compiler_flags)
 
 find_package( OpenMP COMPONENTS C Fortran )
-#find_package( NetCDF REQUIRED COMPONENTS C Fortran )
 
 if ( ENABLE_GPU )
   set( OpenACC_ACCEL_TARGET tesla:cc60 )

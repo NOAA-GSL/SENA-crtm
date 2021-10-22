@@ -1,0 +1,11 @@
+# Exclude build directory
+build
+
+# Ignore backup files
+*~
+
+# Ignore executables
+exe/crtm_kernel_*
+
+# Ignore output files
+*.out
