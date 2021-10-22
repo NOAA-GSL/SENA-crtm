@@ -1,16 +1,20 @@
 list( APPEND crtm_kernel_cpu_src_files
 kernel.F90
+mt19937.f90
 )
 
 list( APPEND crtm_kernel_gpu_v1_src_files
 kernel_v1.F90
+mt19937.f90
 )
 
 list( APPEND crtm_kernel_gpu_v2_src_files
 kernel_v2.F90
+mt19937.f90
 )
 
 add_executable( crtm_kernel_cpu ${crtm_kernel_cpu_src_files} )
+
 if(ENABLE_GPU)
   add_executable( crtm_kernel_gpu_v1 ${crtm_kernel_gpu_v1_src_files} )
   add_executable( crtm_kernel_gpu_v2 ${crtm_kernel_gpu_v2_src_files} )

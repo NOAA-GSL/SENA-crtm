@@ -137,6 +137,8 @@ MODULE my_kernels
     n_Legendre_Terms, &
     n_Layers          )
 
+    USE mt19937_64
+
     ! Arguments
     TYPE(RTV_type), INTENT(OUT) :: RTV
     INTEGER       , INTENT(IN)  :: n_Angles        
@@ -174,17 +176,18 @@ MODULE my_kernels
     RTV%Is_Allocated = .TRUE.
 
     !------ Fill arrays with random values --- !
-    CALL RANDOM_NUMBER(RTV%Pff)
-    CALL RANDOM_NUMBER(RTV%Pbb)
     RTV%Number_Doubling(:) = MAX_N_DOUBLING
-    CALL RANDOM_NUMBER(RTV%Delta_Tau)
-    CALL RANDOM_NUMBER(RTV%Refl)
-    CALL RANDOM_NUMBER(RTV%Trans)
-    CALL RANDOM_NUMBER(RTV%Inv_BeT)
-    CALL RANDOM_NUMBER(RTV%COS_Angle)
-    CALL RANDOM_NUMBER(RTV%COS_Angle)
-    CALL RANDOM_NUMBER(RTV%C1)
-    CALL RANDOM_NUMBER(RTV%C2)
+    CALL mt19937_real3d(RTV%Pff)
+    CALL mt19937_real3d(RTV%Pbb)
+    CALL mt19937_real1d(RTV%Delta_Tau)
+    CALL mt19937_real4d(RTV%Refl)
+    CALL mt19937_real4d(RTV%Trans)
+    CALL mt19937_real4d(RTV%Inv_BeT)
+    CALL mt19937_real1d(RTV%COS_Angle)
+    CALL mt19937_real1d(RTV%COS_Weight)
+    CALL mt19937_real2d(RTV%C1)
+    CALL mt19937_real2d(RTV%C2)
+
     RTV%Refl=RTV%Refl/100.0_fp
     RTV%Trans=RTV%Trans/100.0_fp
     RTV%Inv_Bet=RTV%Inv_Bet/100.0_fp
@@ -341,6 +344,202 @@ MODULE my_kernels
 
   END SUBROUTINE CRTM_Doubling_layer_AD
 
+
+  !------------------------------------------------------------------
+  ! print_state
+  !
+  ! Prints statistics for the kernel state variables
+  !------------------------------------------------------------------
+  SUBROUTINE print_state(msg, &
+                MAX_N_ANGLES, &
+                    N_LAYERS, &
+         N_PROFILESxCHANNELS, &
+                      Pff_AD, &
+                      Pbb_AD, &
+                   s_Refl_AD, &
+                  s_Trans_AD, &
+              s_source_UP_AD, &
+            s_source_DOWN_AD, &
+                           w, &
+                        T_OD, &
+                        w_AD, &
+                     T_OD_AD, &
+        Planck_Atmosphere_AD, &
+                         RTV)
+
+    CHARACTER(LEN=*) :: msg
+    INTEGER,        INTENT(IN) :: MAX_N_ANGLES, N_LAYERS, N_PROFILESxCHANNELS
+    REAL(fp),       INTENT(IN) :: Pff_AD(:,:,:,:)
+    REAL(fp),       INTENT(IN) :: Pbb_AD(:,:,:,:)
+    REAL(fp),       INTENT(IN) :: s_Refl_AD(:,:,:,:)
+    REAL(fp),       INTENT(IN) :: s_Trans_AD(:,:,:,:)
+    REAL(fp),       INTENT(IN) :: s_source_UP_AD(:,:,:)
+    REAL(fp),       INTENT(IN) :: s_source_DOWN_AD(:,:,:)
+    REAL(fp),       INTENT(IN) :: w(:,:)
+    REAL(fp),       INTENT(IN) :: T_OD(:,:)
+    REAL(fp),       INTENT(IN) :: w_AD(:,:)
+    REAL(fp),       INTENT(IN) :: T_OD_AD(:,:)
+    REAL(fp),       INTENT(IN) :: Planck_Atmosphere_AD(:,:)
+    TYPE(RTV_type), INTENT(IN) :: RTV(:)
+
+    INTEGER               :: i
+    REAL(fp), ALLOCATABLE :: temp2d(:,:), temp3d(:,:,:), temp4d(:,:,:,:), temp5d(:,:,:,:,:)
+
+    WRITE(*,'(A4)') "TEST"
+    WRITE(*,'(A5,A117)') "TEST ", repeat("=",117)
+    WRITE(*,'(A5,A32)') "TEST ", msg
+    WRITE(*,'(A5,A117)') "TEST ", repeat("=",117)
+    WRITE(*,'(A5,A17,5A20)') "TEST ", "Variable", "Min", "Max", "First", "Last", "RMS"
+    WRITE(*,'(A5,A117)') "TEST ", repeat("-",117)
+
+    CALL print_4d_variable("Pff_AD", Pff_AD)
+    CALL print_4d_variable("Pbb_AD", Pbb_AD)
+    CALL print_4d_variable("s_Refl_AD", s_Refl_AD)
+    CALL print_4d_variable("s_Trans_AD", s_Trans_AD)
+    CALL print_3d_variable("s_source_UP_AD", s_source_UP_AD)
+    CALL print_3d_variable("s_source_DOWN_AD", s_source_DOWN_AD)
+    CALL print_2d_variable("w", w)
+    CALL print_2d_variable("T_OD", T_OD)
+    CALL print_2d_variable("w_AD", w_AD)
+    CALL print_2d_variable("T_OD_AD", T_OD_AD)
+    CALL print_2d_variable("Planck_Atmosphere_AD", Planck_Atmosphere_AD)
+
+    ALLOCATE(temp4d(N_PROFILESxCHANNELS, MAX_N_ANGLES, MAX_N_ANGLES + 1, N_LAYERS))
+    DO i = 1, N_PROFILESxCHANNELS
+      temp4d(i, :, :, :) = RTV(i)%Pff
+    END DO
+    CALL print_4d_variable("RTV%Pff", temp4d)
+    DO i = 1, N_PROFILESxCHANNELS
+      temp4d(i, :, :, :) = RTV(i)%Pbb
+    END DO
+    CALL print_4d_variable("RTV%Pbb", temp4d)
+    DEALLOCATE(temp4d)
+
+    ALLOCATE(temp2d(N_PROFILESxCHANNELS, N_LAYERS))
+    DO i = 1, N_PROFILESxCHANNELS
+      temp2d(i, :) = RTV(i)%Delta_Tau
+    END DO
+    CALL print_2d_variable("RTV%Delta_Tau", temp2d)
+    DEALLOCATE(temp2d)
+
+    ALLOCATE(temp5d(N_PROFILESxCHANNELS, MAX_N_ANGLES, MAX_N_ANGLES, MAX_N_DOUBLING + 1, N_LAYERS))
+    DO i = 1, N_PROFILESxCHANNELS
+      temp5d(i, :, :, :, :) = RTV(i)%Refl
+    END DO
+    CALL print_5d_variable("RTV%Refl", temp5d)
+    DO i = 1, N_PROFILESxCHANNELS
+      temp5d(i, :, :, :, :) = RTV(i)%Trans
+    END DO
+    CALL print_5d_variable("RTV%Trans", temp5d)
+    DO i = 1, N_PROFILESxCHANNELS
+      temp5d(i, :, :, :, :) = RTV(i)%Inv_BeT
+    END DO
+    CALL print_5d_variable("RTV%Inv_BeT", temp5d)
+    DEALLOCATE(temp5d)
+
+    ALLOCATE(temp2d(N_PROFILESxCHANNELS, MAX_N_ANGLES))
+    DO i = 1, N_PROFILESxCHANNELS
+      temp2d(i, :) = RTV(i)%COS_Angle
+    END DO
+    CALL print_2d_variable("RTV%COS_Angle", temp2d)
+    DO i = 1, N_PROFILESxCHANNELS
+      temp2d(i, :) = RTV(i)%COS_Weight
+    END DO
+    CALL print_2d_variable("RTV%COS_Weight", temp2d)
+    DEALLOCATE(temp2d)
+
+    ALLOCATE(temp3d(N_PROFILESxCHANNELS, MAX_N_ANGLES, N_LAYERS))
+    DO i = 1, N_PROFILESxCHANNELS
+      temp3d(i, :, :) = RTV(i)%C1
+    END DO
+    CALL print_3d_variable("RTV%C1", temp3d)
+    DO i = 1, N_PROFILESxCHANNELS
+      temp3d(i, :, :) = RTV(i)%C2
+    END DO
+    CALL print_3d_variable("RTV%C2", temp3d)
+    DEALLOCATE(temp3d)
+
+    WRITE(*,'(A5,A117)') "TEST ", repeat("-",117)
+    WRITE(*,'(A4)') "TEST"
+
+  END SUBROUTINE print_state
+
+
+  !------------------------------------------------------------------
+  ! print_2d_variable
+  !
+  ! Prints statistics for a 2d state variable
+  !------------------------------------------------------------------
+  SUBROUTINE print_2d_variable(name, data)
+
+    character(len=*) :: name
+    real(fp)         :: data(:,:)
+
+    ! Note: Assumed shape array sections always start with index=1 for all
+    ! dimensions
+    !       So we don't have to know start/end indices here
+    WRITE(*,'(A5, A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1), &
+                            data(size(data,1), size(data,2)),            &
+                            sqrt(sum(data**2) / size(data))
+
+  END SUBROUTINE print_2d_variable
+
+  !------------------------------------------------------------------
+  ! print_3d_variable
+  !
+  ! Prints statistics for a 3d state variable
+  !------------------------------------------------------------------
+  SUBROUTINE print_3d_variable(name, data)
+
+    character(len=*) :: name
+    real(fp)         :: data(:,:,:)
+
+    ! Note: Assumed shape array sections always start with index=1 for all dimensions
+    !       So we do not have to know start/end indices here
+    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1),  &
+                            data(size(data,1), size(data,2), size(data,3)), &
+                            sqrt(sum(data**2) / size(data))
+
+  END SUBROUTINE print_3d_variable
+
+  !------------------------------------------------------------------
+  ! print_4d_variable
+  !
+  ! Prints statistics for a 4d state variable
+  !------------------------------------------------------------------
+  SUBROUTINE print_4d_variable(name, data)
+
+    character(len=*) :: name
+    real(fp)         :: data(:,:,:,:)
+
+    ! Note: Assumed shape array sections always start with index=1 for all dimensions
+    !       So we do not have to know start/end indices here
+    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1,1),  &
+                            data(size(data,1), size(data,2), size(data,3), size(data,4)), &
+                            sqrt(sum(data**2) / size(data))
+
+  END SUBROUTINE print_4d_variable
+
+
+  !------------------------------------------------------------------
+  ! print_5d_variable
+  !
+  ! Prints statistics for a 5d state variable
+  !------------------------------------------------------------------
+  SUBROUTINE print_5d_variable(name, data)
+
+    character(len=*) :: name
+    real(fp)         :: data(:,:,:,:,:)
+
+    ! Note: Assumed shape array sections always start with index=1 for all dimensions
+    !       So we do not have to know start/end indices here
+    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1,1,1),  &
+                            data(size(data,1), size(data,2), size(data,3), size(data,4), size(data,5)), &
+                            sqrt(sum(data**2) / size(data))
+
+  END SUBROUTINE print_5d_variable
+
+
 END MODULE my_kernels
 
 
@@ -354,6 +553,7 @@ PROGRAM test_kernels
 
   USE my_kernels
   USE omp_lib
+  USE mt19937_64
 
   !------- Test -------!
   INTEGER, PARAMETER :: N_LAYERS = MAX_N_LAYERS
@@ -365,14 +565,14 @@ PROGRAM test_kernels
   REAL :: elapsed
 
   !---- local arrays --- !
-  REAL(fp), ALLOCATABLE, DIMENSION( :,:,:,: ) :: Pff_AD,Pbb_AD,s_Refl_AD,s_Trans_AD
-  REAL(fp), ALLOCATABLE, DIMENSION( :,:,: ) :: s_source_UP_AD,s_source_DOWN_AD
+  REAL(fp), ALLOCATABLE, DIMENSION( :,:,:,: ) :: Pff_AD, Pbb_AD, s_Refl_AD, s_Trans_AD
+  REAL(fp), ALLOCATABLE, DIMENSION( :,:,: ) :: s_source_UP_AD, s_source_DOWN_AD
   REAL(fp), ALLOCATABLE, DIMENSION(:,:) ::  w, T_OD
   REAL(fp), ALLOCATABLE, DIMENSION(:,:) :: w_AD, T_OD_AD
   REAL(fp), ALLOCATABLE, DIMENSION(:,:) :: Planck_Atmosphere_AD 
 
-  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: term1,term2,term3,term4,term5_AD
-  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: trans1,trans3,trans4,temp1,temp2,temp3
+  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: term1, term2, term3, term4, term5_AD
+  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: trans1, trans3, trans4, temp1, temp2, temp3
   REAL(fp), DIMENSION(MAX_N_ANGLES) :: C1_AD, C2_AD
 
   !---- openmp -----!
@@ -410,18 +610,20 @@ PROGRAM test_kernels
 
   !---- fill arrays with random numbers ----!
   PRINT*, "Filling arrays with random values"
-  CALL RANDOM_NUMBER(Pff_AD)
-  CALL RANDOM_NUMBER(Pbb_AD)
-  CALL RANDOM_NUMBER(s_Refl_AD)
-  CALL RANDOM_NUMBER(s_Trans_AD)
-  CALL RANDOM_NUMBER(s_source_UP_AD)
-  CALL RANDOM_NUMBER(s_source_DOWN_AD)
-  CALL RANDOM_NUMBER(w)
-  CALL RANDOM_NUMBER(T_OD)
-  CALL RANDOM_NUMBER(w_AD)
-  CALL RANDOM_NUMBER(T_OD_AD)
-  CALL RANDOM_NUMBER(Planck_Atmosphere_AD)
+  CALL mt19937_real4d(Pff_AD)
+  CALL mt19937_real4d(Pbb_AD)
+  CALL mt19937_real4d(s_Refl_AD)
+  CALL mt19937_real4d(s_Trans_AD)
+  CALL mt19937_real3d(s_source_UP_AD)
+  CALL mt19937_real3d(s_source_DOWN_AD)
+  CALL mt19937_real2d(w)
+  CALL mt19937_real2d(T_OD)
+  CALL mt19937_real2d(w_AD)
+  CALL mt19937_real2d(T_OD_AD)
+  CALL mt19937_real2d(Planck_Atmosphere_AD)
+
   PRINT*, "Finished filling arrays with random values."
+
 
   !---- fill RTV ----!
   DO t = 1, N_PROFILESxCHANNELS
@@ -436,6 +638,24 @@ PROGRAM test_kernels
 
   PRINT*, "Finished creating RTV"
 
+  !------- Print input state statistics -------!
+  CALL print_state("Input state", &
+                    MAX_N_ANGLES, &
+                        N_LAYERS, &
+             N_PROFILESxCHANNELS, &
+                          Pff_AD, &
+                          Pbb_AD, &
+                       s_Refl_AD, &
+                      s_Trans_AD, &
+                  s_source_UP_AD, &
+                s_source_DOWN_AD, &
+                               w, &
+                            T_OD, &
+                            w_AD, &
+                         T_OD_AD, &
+            Planck_Atmosphere_AD, &
+                             RTV)
+
   !---- call kernel ----!
   PRINT*, "Calling kernel"  
   CALL SYSTEM_CLOCK (count_rate=count_rate)
@@ -446,18 +666,36 @@ PROGRAM test_kernels
 !$omp            trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)
   DO t = 1, N_PROFILESxCHANNELS
 
-  streamid = mod(t - 1,n_omp_threads)
+    streamid = mod(t - 1,n_omp_threads)
 
-  DO k = 1, N_LAYERS
-       streamid = k
-       CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams, RTV(t)%n_Angles, k, w( k, t ), T_OD( k, t ),      &        !Input
-                           RTV(t)%COS_Angle, RTV(t)%COS_Weight, RTV(t)%Pff( :, :, k ), RTV(t)%Pbb( :, :, k ), & ! Input
-                           RTV(t)%Planck_Atmosphere( k ),    & !Input
-                           s_trans_AD( :, :, k, t ), s_refl_AD( :, :, k, t ), s_source_up_AD( :, k, t ),   & 
-                           s_source_down_AD( :, k, t ), RTV(t), w_AD( k, t ), T_OD_AD( k, t ), Pff_AD( :, :, k, t ), & 
-                           Pbb_AD( :, :, k, t ), Planck_Atmosphere_AD( k, t ), streamid, &
-                           term1,term2,term3,term4,term5_AD,trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)  !Output
-  ENDDO
+    DO k = 1, N_LAYERS
+         streamid = k
+         CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
+                                     RTV(t)%n_Angles,                      & ! Input
+                                     k,                                    & ! Input
+                                     w( k, t ),                            & ! Input
+                                     T_OD( k, t ),                         & ! Input
+                                     RTV(t)%COS_Angle,                     & ! Input
+                                     RTV(t)%COS_Weight,                    & ! Input
+                                     RTV(t)%Pff( :, :, k ),                & ! Input
+                                     RTV(t)%Pbb( :, :, k ),                & ! Input
+                                     RTV(t)%Planck_Atmosphere( k ),        & ! Input
+                                     s_trans_AD( :, :, k, t ),             & ! Input / Output
+                                     s_refl_AD( :, :, k, t ),              & ! Input / Output
+                                     s_source_up_AD( :, k, t ),            & ! Input / Output
+                                     s_source_down_AD( :, k, t ),          & ! Input / Output
+                                     RTV(t),                               & ! Input
+                                     w_AD( k, t ),                         & ! Input / Output
+                                     T_OD_AD( k, t ),                      & ! Input / Output
+                                     Pff_AD( :, :, k, t ),                 & ! Input / Output
+                                     Pbb_AD( :, :, k, t ),                 & ! Input / Output
+                                     Planck_Atmosphere_AD( k, t ),         & ! Input / Output
+                                     streamid,                             & ! Input
+                                     term1, term2, term3, term4, term5_AD, & ! Output
+                                     trans1, trans3, trans4,               & ! Output
+                                     temp1, temp2, temp3,                  & ! Output
+                                     C1_AD, C2_AD)                           ! Output
+    ENDDO
 
   ENDDO
 !$omp end parallel do
@@ -469,7 +707,22 @@ PROGRAM test_kernels
   PRINT*, "Finished executing kernel in =", elapsed  
   PRINT*
 
-  !------- Print section of output -------!
-  PRINT*, s_trans_AD(:,1,1,1)
+  !------- Print output state statistics -------!
+  CALL print_state("Output state", &
+                     MAX_N_ANGLES, &
+                         N_LAYERS, &
+              N_PROFILESxCHANNELS, &
+                           Pff_AD, &
+                           Pbb_AD, &
+                        s_Refl_AD, &
+                       s_Trans_AD, &
+                   s_source_UP_AD, &
+                 s_source_DOWN_AD, &
+                                w, &
+                             T_OD, &
+                             w_AD, &
+                          T_OD_AD, &
+             Planck_Atmosphere_AD, &
+                              RTV)
 
 END PROGRAM test_kernels
