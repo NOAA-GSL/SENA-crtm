@@ -3,66 +3,12 @@
 !----------------
 MODULE my_kernels
 
+  USE crtm_type
+  USE crtm_utils
+
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: fp = SELECTED_REAL_KIND(15)
-  REAL(fp), PARAMETER :: ZERO          =  0.0_fp
-  REAL(fp), PARAMETER :: ONE           =  1.0_fp
-  REAL(fp), PARAMETER :: TWO           =  2.0_fp
-  REAL(fp), PARAMETER :: OPTICAL_DEPTH_THRESHOLD = 0.000001_fp
-  INTEGER, PARAMETER :: MAX_N_LAYERS   = 200
-  INTEGER, PARAMETER :: INVALID_SENSOR = 0
-  INTEGER, PARAMETER :: RT_ADA = 56
-  INTEGER, PARAMETER :: MAX_N_ANGLES = 16
-  INTEGER, PARAMETER :: MAX_N_LEGENDRE_TERMS = 16
-  INTEGER, PARAMETER :: MAX_N_DOUBLING = 55
-  INTEGER, PARAMETER :: MAX_N_SOI_ITERATIONS = 75
-
   INTEGER :: N_GPUS 
-
-  !---- RTV type ---!
-  TYPE :: RTV_type
-  
-    INTEGER :: n_Layers         = 0       ! Total number of atmospheric layers
-    INTEGER :: n_Angles         = 0       ! Number of angles to be considered
-    INTEGER :: n_SOI_Iterations = 0       ! Number of SOI iterations
-    
-    ! Planck radiances
-    REAL(fp)                               :: Planck_Surface    = ZERO
-    REAL(fp), DIMENSION(  0:MAX_N_LAYERS ) :: Planck_Atmosphere = ZERO
-
-    ! Quadrature information
-    REAL(fp), DIMENSION( MAX_N_ANGLES ) :: COS_Angle  = ZERO  ! Gaussian quadrature abscissa
-    REAL(fp), DIMENSION( MAX_N_ANGLES ) :: COS_Weight = ZERO  ! Gaussian quadrature weights
-    
-    ! Scattering, visible model variables    
-    INTEGER :: n_Streams         = 0       ! Number of *hemispheric* stream angles used in RT    
-
-    !-----------------------------------
-    ! Variables used in the ADA routines
-    !-----------------------------------
-    ! Flag to indicate the following arrays have all been allocated
-    LOGICAL :: Is_Allocated = .FALSE.
-     
-    ! Phase function variables
-    ! Forward and backward scattering phase matrices
-    REAL(fp), ALLOCATABLE :: Pff(:,:,:)  ! MAX_N_ANGLES, MAX_N_ANGLES+1, MAX_N_LAYERS
-    REAL(fp), ALLOCATABLE :: Pbb(:,:,:)  ! MAX_N_ANGLES, MAX_N_ANGLES+1, MAX_N_LAYERS
-
-    !-----------------------------------
-    ! Variables used in the SOI routines
-    !-----------------------------------
-    INTEGER :: Number_SOI_Iter = 0
-
-    INTEGER , ALLOCATABLE :: Number_Doubling(:)  ! n_Layers
-    REAL(fp), ALLOCATABLE :: Delta_Tau(:)        ! n_Layers
-    REAL(fp), ALLOCATABLE :: Refl(:,:,:,:)       ! n_Angles, n_Angles, 0:MAX_N_DOUBLING, n_Layers
-    REAL(fp), ALLOCATABLE :: Trans(:,:,:,:)      ! n_Angles, n_Angles, 0:MAX_N_DOUBLING, n_Layers
-    REAL(fp), ALLOCATABLE :: Inv_BeT(:,:,:,:)    ! n_Angles, n_Angles, 0:MAX_N_DOUBLING, n_Layers
-    REAL(fp), ALLOCATABLE :: C1(:,:)             ! n_Angles, n_Layers
-    REAL(fp), ALLOCATABLE :: C2(:,:)             ! n_Angles, n_Layers
-
-  END TYPE RTV_type
 
  CONTAINS
 
@@ -142,6 +88,9 @@ MODULE my_kernels
     n_Angles        , &
     n_Legendre_Terms, &
     n_Layers          )
+
+    USE mt19937_64
+
     ! Arguments
     TYPE(RTV_type), INTENT(OUT) :: RTV
     INTEGER       , INTENT(IN)  :: n_Angles        
@@ -179,17 +128,18 @@ MODULE my_kernels
     RTV%Is_Allocated = .TRUE.
 
     !------ Fill arrays with random values --- !
-    CALL RANDOM_NUMBER(RTV%Pff)
-    CALL RANDOM_NUMBER(RTV%Pbb)
     RTV%Number_Doubling(:) = MAX_N_DOUBLING
-    CALL RANDOM_NUMBER(RTV%Delta_Tau)
-    CALL RANDOM_NUMBER(RTV%Refl)
-    CALL RANDOM_NUMBER(RTV%Trans)
-    CALL RANDOM_NUMBER(RTV%Inv_BeT)
-    CALL RANDOM_NUMBER(RTV%COS_Angle)
-    CALL RANDOM_NUMBER(RTV%COS_Angle)
-    CALL RANDOM_NUMBER(RTV%C1)
-    CALL RANDOM_NUMBER(RTV%C2)
+    CALL mt19937_real3d(RTV%Pff)
+    CALL mt19937_real3d(RTV%Pbb)
+    CALL mt19937_real1d(RTV%Delta_Tau)
+    CALL mt19937_real4d(RTV%Refl)
+    CALL mt19937_real4d(RTV%Trans)
+    CALL mt19937_real4d(RTV%Inv_BeT)
+    CALL mt19937_real1d(RTV%COS_Angle)
+    CALL mt19937_real1d(RTV%COS_Weight)
+    CALL mt19937_real2d(RTV%C1)
+    CALL mt19937_real2d(RTV%C2)
+
     RTV%Refl=RTV%Refl/100.0_fp
     RTV%Trans=RTV%Trans/100.0_fp
     RTV%Inv_Bet=RTV%Inv_Bet/100.0_fp
@@ -379,6 +329,9 @@ PROGRAM test_kernels
 #ifdef _OPENACC
   USE openacc
 #endif
+  USE mt19937_64
+  USE crtm_type
+  USE crtm_utils
 
   !------- Test -------!
   INTEGER, PARAMETER :: N_LAYERS = MAX_N_LAYERS
@@ -446,17 +399,17 @@ PROGRAM test_kernels
 
   !---- fill arrays with random numbers ----!
   PRINT*, "Filling arrays with random values"
-  CALL RANDOM_NUMBER(Pff_AD)
-  CALL RANDOM_NUMBER(Pbb_AD)
-  CALL RANDOM_NUMBER(s_Refl_AD)
-  CALL RANDOM_NUMBER(s_Trans_AD)
-  CALL RANDOM_NUMBER(s_source_UP_AD)
-  CALL RANDOM_NUMBER(s_source_DOWN_AD)
-  CALL RANDOM_NUMBER(w)
-  CALL RANDOM_NUMBER(T_OD)
-  CALL RANDOM_NUMBER(w_AD)
-  CALL RANDOM_NUMBER(T_OD_AD)
-  CALL RANDOM_NUMBER(Planck_Atmosphere_AD)
+  CALL mt19937_real4d(Pff_AD)
+  CALL mt19937_real4d(Pbb_AD)
+  CALL mt19937_real4d(s_Refl_AD)
+  CALL mt19937_real4d(s_Trans_AD)
+  CALL mt19937_real3d(s_source_UP_AD)
+  CALL mt19937_real3d(s_source_DOWN_AD)
+  CALL mt19937_real2d(w)
+  CALL mt19937_real2d(T_OD)
+  CALL mt19937_real2d(w_AD)
+  CALL mt19937_real2d(T_OD_AD)
+  CALL mt19937_real2d(Planck_Atmosphere_AD)
   PRINT*, "Finished filling arrays with random values."
 
   !---- fill RTV ----!
@@ -494,6 +447,25 @@ PROGRAM test_kernels
   ENDDO
   PRINT*, "Finished creating RTV"
 
+
+  !------- Print input state statistics -------!
+  CALL print_state("Input state", &
+                    MAX_N_ANGLES, &
+                        N_LAYERS, &
+             N_PROFILESxCHANNELS, &
+                          Pff_AD, &
+                          Pbb_AD, &
+                       s_Refl_AD, &
+                      s_Trans_AD, &
+                  s_source_UP_AD, &
+                s_source_DOWN_AD, &
+                               w, &
+                            T_OD, &
+                            w_AD, &
+                         T_OD_AD, &
+            Planck_Atmosphere_AD, &
+                             RTV)
+
   !---- call kernel ----!
   PRINT*, "Calling kernel"  
   CALL SYSTEM_CLOCK (count_rate=count_rate)
@@ -520,13 +492,32 @@ PROGRAM test_kernels
 !$acc            trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)
   DO k = 1, N_LAYERS
        streamid = k
-       CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams, RTV(t)%n_Angles, k, w( k, t ), T_OD( k, t ),      &        !Input
-                           RTV(t)%COS_Angle, RTV(t)%COS_Weight, RTV(t)%Pff( :, :, k ), RTV(t)%Pbb( :, :, k ), & ! Input
-                           RTV(t)%Planck_Atmosphere( k ),    & !Input
-                           s_trans_AD( :, :, k, t ), s_refl_AD( :, :, k, t ), s_source_up_AD( :, k, t ),   & 
-                           s_source_down_AD( :, k, t ), RTV(t), w_AD( k, t ), T_OD_AD( k, t ), Pff_AD( :, :, k, t ), & 
-                           Pbb_AD( :, :, k, t ), Planck_Atmosphere_AD( k, t ), streamid, &
-                           term1,term2,term3,term4,term5_AD,trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)  !Output
+         CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
+                                     RTV(t)%n_Angles,                      & ! Input
+                                     k,                                    & ! Input
+                                     w( k, t ),                            & ! Input
+                                     T_OD( k, t ),                         & ! Input
+                                     RTV(t)%COS_Angle,                     & ! Input
+                                     RTV(t)%COS_Weight,                    & ! Input
+                                     RTV(t)%Pff( :, :, k ),                & ! Input
+                                     RTV(t)%Pbb( :, :, k ),                & ! Input
+                                     RTV(t)%Planck_Atmosphere( k ),        & ! Input
+                                     s_trans_AD( :, :, k, t ),             & ! Input / Output
+                                     s_refl_AD( :, :, k, t ),              & ! Input / Output
+                                     s_source_up_AD( :, k, t ),            & ! Input / Output
+                                     s_source_down_AD( :, k, t ),          & ! Input / Output
+                                     RTV(t),                               & ! Input
+                                     w_AD( k, t ),                         & ! Input / Output
+                                     T_OD_AD( k, t ),                      & ! Input / Output
+                                     Pff_AD( :, :, k, t ),                 & ! Input / Output
+                                     Pbb_AD( :, :, k, t ),                 & ! Input / Output
+                                     Planck_Atmosphere_AD( k, t ),         & ! Input / Output
+                                     streamid,                             & ! Input
+                                     term1, term2, term3, term4, term5_AD, & ! Output
+                                     trans1, trans3, trans4,               & ! Output
+                                     temp1, temp2, temp3,                  & ! Output
+                                     C1_AD, C2_AD)                           ! Output
+
   ENDDO
 !$acc end data
 
@@ -554,9 +545,33 @@ PROGRAM test_kernels
      s = gpuid * N_PROFS_PER_GPU + 1
      e = MIN(N_PROFILESxCHANNELS, s + N_PROFS_PER_GPU - 1)
 !$acc update self(s_trans_AD(:,:,:,s:e))
+!$acc update self(s_refl_AD(:,:,:,s:e))
+!$acc update self(s_source_up_AD(:,:,s:e))
+!$acc update self(s_source_down_AD(:,:,s:e))
+!$acc update self(w_AD(:,s:e))
+!$acc update self(T_OD_AD(:,s:e))
+!$acc update self(Pff_AD(:,:,:,s:e))
+!$acc update self(Pbb_AD(:,:,:,s:e))
+!$acc update self(Planck_Atmosphere_AD(:,s:e))
   ENDDO
 #endif
 
-  PRINT*, s_trans_AD(:,1,1,1)
+  !------- Print output state statistics -------!
+  CALL print_state("Output state", &
+                    MAX_N_ANGLES, &
+                        N_LAYERS, &
+             N_PROFILESxCHANNELS, &
+                          Pff_AD, &
+                          Pbb_AD, &
+                       s_Refl_AD, &
+                      s_Trans_AD, &
+                  s_source_UP_AD, &
+                s_source_DOWN_AD, &
+                               w, &
+                            T_OD, &
+                            w_AD, &
+                         T_OD_AD, &
+            Planck_Atmosphere_AD, &
+                             RTV)
 
 END PROGRAM test_kernels
