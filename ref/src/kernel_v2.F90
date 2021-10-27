@@ -207,7 +207,7 @@ MODULE my_kernels
       source_down_AD = ZERO
       RETURN
     ENDIF
-   
+
 !$acc loop reduction(+:Planck_Func_AD)
     DO i = NANG, 1, -1
       source_up_AD(i) = source_up_AD(i) + source_down_AD(i)
@@ -334,14 +334,14 @@ PROGRAM test_kernels
   REAL :: elapsed
 
   !---- local arrays --- !
-  REAL(fp), ALLOCATABLE, DIMENSION( :,:,:,: ) :: Pff_AD,Pbb_AD,s_Refl_AD,s_Trans_AD
-  REAL(fp), ALLOCATABLE, DIMENSION( :,:,: ) :: s_source_UP_AD,s_source_DOWN_AD
+  REAL(fp), ALLOCATABLE, DIMENSION( :,:,:,: ) :: Pff_AD, Pbb_AD, s_Refl_AD, s_Trans_AD
+  REAL(fp), ALLOCATABLE, DIMENSION( :,:,: ) :: s_source_UP_AD, s_source_DOWN_AD
   REAL(fp), ALLOCATABLE, DIMENSION(:,:) ::  w, T_OD
   REAL(fp), ALLOCATABLE, DIMENSION(:,:) :: w_AD, T_OD_AD
   REAL(fp), ALLOCATABLE, DIMENSION(:,:) :: Planck_Atmosphere_AD 
 
-  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: term1,term2,term3,term4,term5_AD
-  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: trans1,trans3,trans4,temp1,temp2,temp3
+  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: term1, term2, term3, term4, term5_AD
+  REAL(fp), DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: trans1, trans3, trans4, temp1, temp2, temp3
   REAL(fp), DIMENSION(MAX_N_ANGLES) :: C1_AD, C2_AD
 
   !---- openmp -----!
@@ -432,12 +432,10 @@ PROGRAM test_kernels
   !---- create RTV array ----!
   PRINT*, "Creating RTV"
   DO t = 1, N_PROFILESxCHANNELS
-
       gpuid = (t - 1) / N_PROFS_PER_GPU
 #ifdef _OPENACC
       CALL acc_set_device_num(gpuid,acc_device_nvidia)
 #endif
-
       CALL RTV_Create( RTV(t), MAX_N_ANGLES, MAX_N_LEGENDRE_TERMS, N_LAYERS )
   ENDDO
   PRINT*, "Finished creating RTV"
@@ -470,11 +468,11 @@ PROGRAM test_kernels
 !$omp            trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)
   DO t = 1, N_PROFILESxCHANNELS
 
-  streamid = mod(t - 1,n_omp_threads)
-  gpuid = (t - 1) / N_PROFS_PER_GPU
+    streamid = mod(t - 1,n_omp_threads)
+    gpuid = (t - 1) / N_PROFS_PER_GPU
 
 #ifdef _OPENACC
-  CALL acc_set_device_num(gpuid,acc_device_nvidia)
+    CALL acc_set_device_num(gpuid,acc_device_nvidia)
 #endif
 
 !$acc kernels async(streamid) &
@@ -484,33 +482,32 @@ PROGRAM test_kernels
 !$acc loop private(k, &
 !$acc            term1,term2,term3,term4,term5_AD, &
 !$acc            trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)
-  DO k = 1, N_LAYERS
-         CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
-                                     RTV(t)%n_Angles,                      & ! Input
-                                     k,                                    & ! Input
-                                     w( k, t ),                            & ! Input
-                                     T_OD( k, t ),                         & ! Input
-                                     RTV(t)%COS_Angle,                     & ! Input
-                                     RTV(t)%COS_Weight,                    & ! Input
-                                     RTV(t)%Pff( :, :, k ),                & ! Input
-                                     RTV(t)%Pbb( :, :, k ),                & ! Input
-                                     RTV(t)%Planck_Atmosphere( k ),        & ! Input
-                                     s_trans_AD( :, :, k, t ),             & ! Input / Output
-                                     s_refl_AD( :, :, k, t ),              & ! Input / Output
-                                     s_source_up_AD( :, k, t ),            & ! Input / Output
-                                     s_source_down_AD( :, k, t ),          & ! Input / Output
-                                     RTV(t),                               & ! Input
-                                     w_AD( k, t ),                         & ! Input / Output
-                                     T_OD_AD( k, t ),                      & ! Input / Output
-                                     Pff_AD( :, :, k, t ),                 & ! Input / Output
-                                     Pbb_AD( :, :, k, t ),                 & ! Input / Output
-                                     Planck_Atmosphere_AD( k, t ),         & ! Input / Output
-                                     term1, term2, term3, term4, term5_AD, & ! Output
-                                     trans1, trans3, trans4,               & ! Output
-                                     temp1, temp2, temp3,                  & ! Output
-                                     C1_AD, C2_AD)                           ! Output
-
-  ENDDO
+    DO k = 1, N_LAYERS
+      CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
+                                  RTV(t)%n_Angles,                      & ! Input
+                                  k,                                    & ! Input
+                                  w( k, t ),                            & ! Input
+                                  T_OD( k, t ),                         & ! Input
+                                  RTV(t)%COS_Angle,                     & ! Input
+                                  RTV(t)%COS_Weight,                    & ! Input
+                                  RTV(t)%Pff( :, :, k ),                & ! Input
+                                  RTV(t)%Pbb( :, :, k ),                & ! Input
+                                  RTV(t)%Planck_Atmosphere( k ),        & ! Input
+                                  s_trans_AD( :, :, k, t ),             & ! Input / Output
+                                  s_refl_AD( :, :, k, t ),              & ! Input / Output
+                                  s_source_up_AD( :, k, t ),            & ! Input / Output
+                                  s_source_down_AD( :, k, t ),          & ! Input / Output
+                                  RTV(t),                               & ! Input
+                                  w_AD( k, t ),                         & ! Input / Output
+                                  T_OD_AD( k, t ),                      & ! Input / Output
+                                  Pff_AD( :, :, k, t ),                 & ! Input / Output
+                                  Pbb_AD( :, :, k, t ),                 & ! Input / Output
+                                  Planck_Atmosphere_AD( k, t ),         & ! Input / Output
+                                  term1, term2, term3, term4, term5_AD, & ! Output
+                                  trans1, trans3, trans4,               & ! Output
+                                  temp1, temp2, temp3,                  & ! Output
+                                  C1_AD, C2_AD)                           ! Output
+    ENDDO
 !$acc end kernels
 
   ENDDO
@@ -518,7 +515,7 @@ PROGRAM test_kernels
 
 #ifdef _OPENACC
   DO gpuid = 0, N_GPUS - 1
-     CALL acc_set_device_num(gpuid,acc_device_nvidia)
+    CALL acc_set_device_num(gpuid,acc_device_nvidia)
 !$acc wait
   ENDDO
 #endif
@@ -530,40 +527,39 @@ PROGRAM test_kernels
   PRINT*, "Finished executing kernel in =", elapsed  
   PRINT*
 
-  !------- Print section of output -------!
+  !------- Print output state statistics -------!
 #ifdef _OPENACC
   DO gpuid = 0, N_GPUS - 1
      CALL acc_set_device_num(gpuid,acc_device_nvidia)
      s = gpuid * N_PROFS_PER_GPU + 1
      e = MIN(N_PROFILESxCHANNELS, s + N_PROFS_PER_GPU - 1)
-!$acc update self(s_trans_AD(:,:,:,s:e))
-!$acc update self(s_refl_AD(:,:,:,s:e))
-!$acc update self(s_source_up_AD(:,:,s:e))
-!$acc update self(s_source_down_AD(:,:,s:e))
-!$acc update self(w_AD(:,s:e))
-!$acc update self(T_OD_AD(:,s:e))
-!$acc update self(Pff_AD(:,:,:,s:e))
-!$acc update self(Pbb_AD(:,:,:,s:e))
-!$acc update self(Planck_Atmosphere_AD(:,s:e))
+!$acc update self(s_trans_AD(:,:,:,s:e),     &
+!$acc             s_refl_AD(:,:,:,s:e),      &
+!$acc             s_source_up_AD(:,:,s:e),   &
+!$acc             s_source_down_AD(:,:,s:e), &
+!$acc             w_AD(:,s:e),               &
+!$acc             T_OD_AD(:,s:e),            &
+!$acc             Pff_AD(:,:,:,s:e),         &
+!$acc             Pbb_AD(:,:,:,s:e),         &
+!$acc             Planck_Atmosphere_AD(:,s:e))
   ENDDO
 #endif
 
-  !------- Print output state statistics -------!
   CALL print_state("Output state", &
-                    MAX_N_ANGLES, &
-                        N_LAYERS, &
-             N_PROFILESxCHANNELS, &
-                          Pff_AD, &
-                          Pbb_AD, &
-                       s_Refl_AD, &
-                      s_Trans_AD, &
-                  s_source_UP_AD, &
-                s_source_DOWN_AD, &
-                               w, &
-                            T_OD, &
-                            w_AD, &
-                         T_OD_AD, &
-            Planck_Atmosphere_AD, &
-                             RTV)
+                     MAX_N_ANGLES, &
+                         N_LAYERS, &
+              N_PROFILESxCHANNELS, &
+                           Pff_AD, &
+                           Pbb_AD, &
+                        s_Refl_AD, &
+                       s_Trans_AD, &
+                   s_source_UP_AD, &
+                 s_source_DOWN_AD, &
+                                w, &
+                             T_OD, &
+                             w_AD, &
+                          T_OD_AD, &
+             Planck_Atmosphere_AD, &
+                              RTV)
 
 END PROGRAM test_kernels

@@ -198,7 +198,7 @@ MODULE my_kernels
       source_down_AD = ZERO
       RETURN
     ENDIF
-  
+
     DO i = NANG, 1, -1
       source_up_AD(i) = source_up_AD(i) + source_down_AD(i)
       source_down_AD(i) = ZERO
@@ -290,7 +290,6 @@ MODULE my_kernels
 
   END SUBROUTINE CRTM_Doubling_layer_AD
 
-
 END MODULE my_kernels
 
 
@@ -374,9 +373,7 @@ PROGRAM test_kernels
   CALL mt19937_real2d(w_AD)
   CALL mt19937_real2d(T_OD_AD)
   CALL mt19937_real2d(Planck_Atmosphere_AD)
-
   PRINT*, "Finished filling arrays with random values."
-
 
   !---- fill RTV ----!
   DO t = 1, N_PROFILESxCHANNELS
@@ -388,7 +385,6 @@ PROGRAM test_kernels
   DO t = 1, N_PROFILESxCHANNELS
       CALL RTV_Create( RTV(t), MAX_N_ANGLES, MAX_N_LEGENDRE_TERMS, N_LAYERS )
   ENDDO
-
   PRINT*, "Finished creating RTV"
 
   !------- Print input state statistics -------!
@@ -422,32 +418,32 @@ PROGRAM test_kernels
     streamid = mod(t - 1,n_omp_threads)
 
     DO k = 1, N_LAYERS
-         streamid = k
-         CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
-                                     RTV(t)%n_Angles,                      & ! Input
-                                     k,                                    & ! Input
-                                     w( k, t ),                            & ! Input
-                                     T_OD( k, t ),                         & ! Input
-                                     RTV(t)%COS_Angle,                     & ! Input
-                                     RTV(t)%COS_Weight,                    & ! Input
-                                     RTV(t)%Pff( :, :, k ),                & ! Input
-                                     RTV(t)%Pbb( :, :, k ),                & ! Input
-                                     RTV(t)%Planck_Atmosphere( k ),        & ! Input
-                                     s_trans_AD( :, :, k, t ),             & ! Input / Output
-                                     s_refl_AD( :, :, k, t ),              & ! Input / Output
-                                     s_source_up_AD( :, k, t ),            & ! Input / Output
-                                     s_source_down_AD( :, k, t ),          & ! Input / Output
-                                     RTV(t),                               & ! Input
-                                     w_AD( k, t ),                         & ! Input / Output
-                                     T_OD_AD( k, t ),                      & ! Input / Output
-                                     Pff_AD( :, :, k, t ),                 & ! Input / Output
-                                     Pbb_AD( :, :, k, t ),                 & ! Input / Output
-                                     Planck_Atmosphere_AD( k, t ),         & ! Input / Output
-                                     streamid,                             & ! Input
-                                     term1, term2, term3, term4, term5_AD, & ! Output
-                                     trans1, trans3, trans4,               & ! Output
-                                     temp1, temp2, temp3,                  & ! Output
-                                     C1_AD, C2_AD)                           ! Output
+      streamid = k
+      CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
+                                  RTV(t)%n_Angles,                      & ! Input
+                                  k,                                    & ! Input
+                                  w( k, t ),                            & ! Input
+                                  T_OD( k, t ),                         & ! Input
+                                  RTV(t)%COS_Angle,                     & ! Input
+                                  RTV(t)%COS_Weight,                    & ! Input
+                                  RTV(t)%Pff( :, :, k ),                & ! Input
+                                  RTV(t)%Pbb( :, :, k ),                & ! Input
+                                  RTV(t)%Planck_Atmosphere( k ),        & ! Input
+                                  s_trans_AD( :, :, k, t ),             & ! Input / Output
+                                  s_refl_AD( :, :, k, t ),              & ! Input / Output
+                                  s_source_up_AD( :, k, t ),            & ! Input / Output
+                                  s_source_down_AD( :, k, t ),          & ! Input / Output
+                                  RTV(t),                               & ! Input
+                                  w_AD( k, t ),                         & ! Input / Output
+                                  T_OD_AD( k, t ),                      & ! Input / Output
+                                  Pff_AD( :, :, k, t ),                 & ! Input / Output
+                                  Pbb_AD( :, :, k, t ),                 & ! Input / Output
+                                  Planck_Atmosphere_AD( k, t ),         & ! Input / Output
+                                  streamid,                             & ! Input
+                                  term1, term2, term3, term4, term5_AD, & ! Output
+                                  trans1, trans3, trans4,               & ! Output
+                                  temp1, temp2, temp3,                  & ! Output
+                                  C1_AD, C2_AD)                           ! Output
     ENDDO
 
   ENDDO
