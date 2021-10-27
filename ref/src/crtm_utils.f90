@@ -50,11 +50,11 @@ CONTAINS
     REAL(fp), ALLOCATABLE :: temp2d(:,:), temp3d(:,:,:), temp4d(:,:,:,:), temp5d(:,:,:,:,:)
 
     WRITE(*,'(A4)') "TEST"
-    WRITE(*,'(A5,A117)') "TEST ", repeat("=",117)
+    WRITE(*,'(A5,A117)') "TEST ", REPEAT("=",117)
     WRITE(*,'(A5,A32)') "TEST ", msg
-    WRITE(*,'(A5,A117)') "TEST ", repeat("=",117)
+    WRITE(*,'(A5,A117)') "TEST ", REPEAT("=",117)
     WRITE(*,'(A5,A17,5A20)') "TEST ", "Variable", "Min", "Max", "First", "Last", "RMS"
-    WRITE(*,'(A5,A117)') "TEST ", repeat("-",117)
+    WRITE(*,'(A5,A117)') "TEST ", REPEAT("-",117)
 
     CALL print_4d_variable("Pff_AD", Pff_AD)
     CALL print_4d_variable("Pbb_AD", Pbb_AD)
@@ -123,7 +123,7 @@ CONTAINS
     CALL print_3d_variable("RTV%C2", temp3d)
     DEALLOCATE(temp3d)
 
-    WRITE(*,'(A5,A117)') "TEST ", repeat("-",117)
+    WRITE(*,'(A5,A117)') "TEST ", REPEAT("-",117)
     WRITE(*,'(A4)') "TEST"
 
   END SUBROUTINE print_state
@@ -136,15 +136,15 @@ CONTAINS
   !------------------------------------------------------------------
   SUBROUTINE print_2d_variable(name, data)
 
-    character(len=*) :: name
-    real(fp)         :: data(:,:)
+    CHARACTER(LEN=*) :: name
+    REAL(fp)         :: data(:,:)
 
     ! Note: Assumed shape array sections always start with index=1 for all
     ! dimensions
     !       So we don't have to know start/end indices here
-    WRITE(*,'(A5, A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1), &
-                            data(size(data,1), size(data,2)),            &
-                            sqrt(sum(data**2) / size(data))
+    WRITE(*,'(A5, A17,5ES20.10)') "TEST ", name, MINVAL(data), MAXVAL(data), data(1,1), &
+                            data(SIZE(data,1), SIZE(data,2)),            &
+                            SQRT(SUM(data**2) / SIZE(data))
 
   END SUBROUTINE print_2d_variable
 
@@ -155,14 +155,14 @@ CONTAINS
   !------------------------------------------------------------------
   SUBROUTINE print_3d_variable(name, data)
 
-    character(len=*) :: name
-    real(fp)         :: data(:,:,:)
+    CHARACTER(LEN=*) :: name
+    REAL(fp)         :: data(:,:,:)
 
     ! Note: Assumed shape array sections always start with index=1 for all dimensions
     !       So we do not have to know start/end indices here
-    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1),  &
-                            data(size(data,1), size(data,2), size(data,3)), &
-                            sqrt(sum(data**2) / size(data))
+    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, MINVAL(data), MAXVAL(data), data(1,1,1),  &
+                            data(SIZE(data,1), SIZE(data,2), SIZE(data,3)), &
+                            SQRT(SUM(data**2) / SIZE(data))
 
   END SUBROUTINE print_3d_variable
 
@@ -173,14 +173,14 @@ CONTAINS
   !------------------------------------------------------------------
   SUBROUTINE print_4d_variable(name, data)
 
-    character(len=*) :: name
-    real(fp)         :: data(:,:,:,:)
+    CHARACTER(LEN=*) :: name
+    REAL(fp)         :: data(:,:,:,:)
 
     ! Note: Assumed shape array sections always start with index=1 for all dimensions
     !       So we do not have to know start/end indices here
-    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1,1),  &
-                            data(size(data,1), size(data,2), size(data,3), size(data,4)), &
-                            sqrt(sum(data**2) / size(data))
+    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, MINVAL(data), MAXVAL(data), data(1,1,1,1),  &
+                            data(SIZE(data,1), SIZE(data,2), SIZE(data,3), SIZE(data,4)), &
+                            SQRT(SUM(data**2) / SIZE(data))
 
   END SUBROUTINE print_4d_variable
 
@@ -192,14 +192,14 @@ CONTAINS
   !------------------------------------------------------------------
   SUBROUTINE print_5d_variable(name, data)
 
-    character(len=*) :: name
-    real(fp)         :: data(:,:,:,:,:)
+    CHARACTER(LEN=*) :: name
+    REAL(fp)         :: data(:,:,:,:,:)
 
     ! Note: Assumed shape array sections always start with index=1 for all dimensions
     !       So we do not have to know start/end indices here
-    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1,1,1),  &
-                            data(size(data,1), size(data,2), size(data,3), size(data,4), size(data,5)), &
-                            sqrt(sum(data**2) / size(data))
+    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, MINVAL(data), MAXVAL(data), data(1,1,1,1,1),  &
+                            data(SIZE(data,1), SIZE(data,2), SIZE(data,3), SIZE(data,4), SIZE(data,5)), &
+                            SQRT(SUM(data**2) / SIZE(data))
 
   END SUBROUTINE print_5d_variable
 
