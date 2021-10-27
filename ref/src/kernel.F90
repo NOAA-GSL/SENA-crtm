@@ -3,64 +3,10 @@
 !----------------
 MODULE my_kernels
 
+  USE crtm_type
+  USE crtm_utils
+
   IMPLICIT NONE
-
-  INTEGER, PARAMETER :: fp = SELECTED_REAL_KIND(15)
-  REAL(fp), PARAMETER :: ZERO          =  0.0_fp
-  REAL(fp), PARAMETER :: ONE           =  1.0_fp
-  REAL(fp), PARAMETER :: TWO           =  2.0_fp
-  REAL(fp), PARAMETER :: OPTICAL_DEPTH_THRESHOLD = 0.000001_fp
-  INTEGER, PARAMETER :: MAX_N_LAYERS   = 200
-  INTEGER, PARAMETER :: INVALID_SENSOR = 0
-  INTEGER, PARAMETER :: RT_ADA = 56
-  INTEGER, PARAMETER :: MAX_N_ANGLES = 16
-  INTEGER, PARAMETER :: MAX_N_LEGENDRE_TERMS = 16
-  INTEGER, PARAMETER :: MAX_N_DOUBLING = 55
-  INTEGER, PARAMETER :: MAX_N_SOI_ITERATIONS = 75
-
-  !---- RTV type ---!
-  TYPE :: RTV_type
-  
-    INTEGER :: n_Layers         = 0       ! Total number of atmospheric layers
-    INTEGER :: n_Angles         = 0       ! Number of angles to be considered
-    INTEGER :: n_SOI_Iterations = 0       ! Number of SOI iterations
-    
-    ! Planck radiances
-    REAL(fp)                               :: Planck_Surface    = ZERO
-    REAL(fp), DIMENSION(  0:MAX_N_LAYERS ) :: Planck_Atmosphere = ZERO
-
-    ! Quadrature information
-    REAL(fp), DIMENSION( MAX_N_ANGLES ) :: COS_Angle  = ZERO  ! Gaussian quadrature abscissa
-    REAL(fp), DIMENSION( MAX_N_ANGLES ) :: COS_Weight = ZERO  ! Gaussian quadrature weights
-    
-    ! Scattering, visible model variables    
-    INTEGER :: n_Streams         = 0       ! Number of *hemispheric* stream angles used in RT    
-
-    !-----------------------------------
-    ! Variables used in the ADA routines
-    !-----------------------------------
-    ! Flag to indicate the following arrays have all been allocated
-    LOGICAL :: Is_Allocated = .FALSE.
-     
-    ! Phase function variables
-    ! Forward and backward scattering phase matrices
-    REAL(fp), ALLOCATABLE :: Pff(:,:,:)  ! MAX_N_ANGLES, MAX_N_ANGLES+1, MAX_N_LAYERS
-    REAL(fp), ALLOCATABLE :: Pbb(:,:,:)  ! MAX_N_ANGLES, MAX_N_ANGLES+1, MAX_N_LAYERS
-
-    !-----------------------------------
-    ! Variables used in the SOI routines
-    !-----------------------------------
-    INTEGER :: Number_SOI_Iter = 0
-
-    INTEGER , ALLOCATABLE :: Number_Doubling(:)  ! n_Layers
-    REAL(fp), ALLOCATABLE :: Delta_Tau(:)        ! n_Layers
-    REAL(fp), ALLOCATABLE :: Refl(:,:,:,:)       ! n_Angles, n_Angles, 0:MAX_N_DOUBLING, n_Layers
-    REAL(fp), ALLOCATABLE :: Trans(:,:,:,:)      ! n_Angles, n_Angles, 0:MAX_N_DOUBLING, n_Layers
-    REAL(fp), ALLOCATABLE :: Inv_BeT(:,:,:,:)    ! n_Angles, n_Angles, 0:MAX_N_DOUBLING, n_Layers
-    REAL(fp), ALLOCATABLE :: C1(:,:)             ! n_Angles, n_Layers
-    REAL(fp), ALLOCATABLE :: C2(:,:)             ! n_Angles, n_Layers
-
-  END TYPE RTV_type
 
  CONTAINS
 
@@ -252,7 +198,7 @@ MODULE my_kernels
       source_down_AD = ZERO
       RETURN
     ENDIF
-  
+
     DO i = NANG, 1, -1
       source_up_AD(i) = source_up_AD(i) + source_down_AD(i)
       source_down_AD(i) = ZERO
@@ -344,202 +290,6 @@ MODULE my_kernels
 
   END SUBROUTINE CRTM_Doubling_layer_AD
 
-
-  !------------------------------------------------------------------
-  ! print_state
-  !
-  ! Prints statistics for the kernel state variables
-  !------------------------------------------------------------------
-  SUBROUTINE print_state(msg, &
-                MAX_N_ANGLES, &
-                    N_LAYERS, &
-         N_PROFILESxCHANNELS, &
-                      Pff_AD, &
-                      Pbb_AD, &
-                   s_Refl_AD, &
-                  s_Trans_AD, &
-              s_source_UP_AD, &
-            s_source_DOWN_AD, &
-                           w, &
-                        T_OD, &
-                        w_AD, &
-                     T_OD_AD, &
-        Planck_Atmosphere_AD, &
-                         RTV)
-
-    CHARACTER(LEN=*) :: msg
-    INTEGER,        INTENT(IN) :: MAX_N_ANGLES, N_LAYERS, N_PROFILESxCHANNELS
-    REAL(fp),       INTENT(IN) :: Pff_AD(:,:,:,:)
-    REAL(fp),       INTENT(IN) :: Pbb_AD(:,:,:,:)
-    REAL(fp),       INTENT(IN) :: s_Refl_AD(:,:,:,:)
-    REAL(fp),       INTENT(IN) :: s_Trans_AD(:,:,:,:)
-    REAL(fp),       INTENT(IN) :: s_source_UP_AD(:,:,:)
-    REAL(fp),       INTENT(IN) :: s_source_DOWN_AD(:,:,:)
-    REAL(fp),       INTENT(IN) :: w(:,:)
-    REAL(fp),       INTENT(IN) :: T_OD(:,:)
-    REAL(fp),       INTENT(IN) :: w_AD(:,:)
-    REAL(fp),       INTENT(IN) :: T_OD_AD(:,:)
-    REAL(fp),       INTENT(IN) :: Planck_Atmosphere_AD(:,:)
-    TYPE(RTV_type), INTENT(IN) :: RTV(:)
-
-    INTEGER               :: i
-    REAL(fp), ALLOCATABLE :: temp2d(:,:), temp3d(:,:,:), temp4d(:,:,:,:), temp5d(:,:,:,:,:)
-
-    WRITE(*,'(A4)') "TEST"
-    WRITE(*,'(A5,A117)') "TEST ", repeat("=",117)
-    WRITE(*,'(A5,A32)') "TEST ", msg
-    WRITE(*,'(A5,A117)') "TEST ", repeat("=",117)
-    WRITE(*,'(A5,A17,5A20)') "TEST ", "Variable", "Min", "Max", "First", "Last", "RMS"
-    WRITE(*,'(A5,A117)') "TEST ", repeat("-",117)
-
-    CALL print_4d_variable("Pff_AD", Pff_AD)
-    CALL print_4d_variable("Pbb_AD", Pbb_AD)
-    CALL print_4d_variable("s_Refl_AD", s_Refl_AD)
-    CALL print_4d_variable("s_Trans_AD", s_Trans_AD)
-    CALL print_3d_variable("s_source_UP_AD", s_source_UP_AD)
-    CALL print_3d_variable("s_source_DOWN_AD", s_source_DOWN_AD)
-    CALL print_2d_variable("w", w)
-    CALL print_2d_variable("T_OD", T_OD)
-    CALL print_2d_variable("w_AD", w_AD)
-    CALL print_2d_variable("T_OD_AD", T_OD_AD)
-    CALL print_2d_variable("Planck_Atmosphere_AD", Planck_Atmosphere_AD)
-
-    ALLOCATE(temp4d(N_PROFILESxCHANNELS, MAX_N_ANGLES, MAX_N_ANGLES + 1, N_LAYERS))
-    DO i = 1, N_PROFILESxCHANNELS
-      temp4d(i, :, :, :) = RTV(i)%Pff
-    END DO
-    CALL print_4d_variable("RTV%Pff", temp4d)
-    DO i = 1, N_PROFILESxCHANNELS
-      temp4d(i, :, :, :) = RTV(i)%Pbb
-    END DO
-    CALL print_4d_variable("RTV%Pbb", temp4d)
-    DEALLOCATE(temp4d)
-
-    ALLOCATE(temp2d(N_PROFILESxCHANNELS, N_LAYERS))
-    DO i = 1, N_PROFILESxCHANNELS
-      temp2d(i, :) = RTV(i)%Delta_Tau
-    END DO
-    CALL print_2d_variable("RTV%Delta_Tau", temp2d)
-    DEALLOCATE(temp2d)
-
-    ALLOCATE(temp5d(N_PROFILESxCHANNELS, MAX_N_ANGLES, MAX_N_ANGLES, MAX_N_DOUBLING + 1, N_LAYERS))
-    DO i = 1, N_PROFILESxCHANNELS
-      temp5d(i, :, :, :, :) = RTV(i)%Refl
-    END DO
-    CALL print_5d_variable("RTV%Refl", temp5d)
-    DO i = 1, N_PROFILESxCHANNELS
-      temp5d(i, :, :, :, :) = RTV(i)%Trans
-    END DO
-    CALL print_5d_variable("RTV%Trans", temp5d)
-    DO i = 1, N_PROFILESxCHANNELS
-      temp5d(i, :, :, :, :) = RTV(i)%Inv_BeT
-    END DO
-    CALL print_5d_variable("RTV%Inv_BeT", temp5d)
-    DEALLOCATE(temp5d)
-
-    ALLOCATE(temp2d(N_PROFILESxCHANNELS, MAX_N_ANGLES))
-    DO i = 1, N_PROFILESxCHANNELS
-      temp2d(i, :) = RTV(i)%COS_Angle
-    END DO
-    CALL print_2d_variable("RTV%COS_Angle", temp2d)
-    DO i = 1, N_PROFILESxCHANNELS
-      temp2d(i, :) = RTV(i)%COS_Weight
-    END DO
-    CALL print_2d_variable("RTV%COS_Weight", temp2d)
-    DEALLOCATE(temp2d)
-
-    ALLOCATE(temp3d(N_PROFILESxCHANNELS, MAX_N_ANGLES, N_LAYERS))
-    DO i = 1, N_PROFILESxCHANNELS
-      temp3d(i, :, :) = RTV(i)%C1
-    END DO
-    CALL print_3d_variable("RTV%C1", temp3d)
-    DO i = 1, N_PROFILESxCHANNELS
-      temp3d(i, :, :) = RTV(i)%C2
-    END DO
-    CALL print_3d_variable("RTV%C2", temp3d)
-    DEALLOCATE(temp3d)
-
-    WRITE(*,'(A5,A117)') "TEST ", repeat("-",117)
-    WRITE(*,'(A4)') "TEST"
-
-  END SUBROUTINE print_state
-
-
-  !------------------------------------------------------------------
-  ! print_2d_variable
-  !
-  ! Prints statistics for a 2d state variable
-  !------------------------------------------------------------------
-  SUBROUTINE print_2d_variable(name, data)
-
-    character(len=*) :: name
-    real(fp)         :: data(:,:)
-
-    ! Note: Assumed shape array sections always start with index=1 for all
-    ! dimensions
-    !       So we don't have to know start/end indices here
-    WRITE(*,'(A5, A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1), &
-                            data(size(data,1), size(data,2)),            &
-                            sqrt(sum(data**2) / size(data))
-
-  END SUBROUTINE print_2d_variable
-
-  !------------------------------------------------------------------
-  ! print_3d_variable
-  !
-  ! Prints statistics for a 3d state variable
-  !------------------------------------------------------------------
-  SUBROUTINE print_3d_variable(name, data)
-
-    character(len=*) :: name
-    real(fp)         :: data(:,:,:)
-
-    ! Note: Assumed shape array sections always start with index=1 for all dimensions
-    !       So we do not have to know start/end indices here
-    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1),  &
-                            data(size(data,1), size(data,2), size(data,3)), &
-                            sqrt(sum(data**2) / size(data))
-
-  END SUBROUTINE print_3d_variable
-
-  !------------------------------------------------------------------
-  ! print_4d_variable
-  !
-  ! Prints statistics for a 4d state variable
-  !------------------------------------------------------------------
-  SUBROUTINE print_4d_variable(name, data)
-
-    character(len=*) :: name
-    real(fp)         :: data(:,:,:,:)
-
-    ! Note: Assumed shape array sections always start with index=1 for all dimensions
-    !       So we do not have to know start/end indices here
-    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1,1),  &
-                            data(size(data,1), size(data,2), size(data,3), size(data,4)), &
-                            sqrt(sum(data**2) / size(data))
-
-  END SUBROUTINE print_4d_variable
-
-
-  !------------------------------------------------------------------
-  ! print_5d_variable
-  !
-  ! Prints statistics for a 5d state variable
-  !------------------------------------------------------------------
-  SUBROUTINE print_5d_variable(name, data)
-
-    character(len=*) :: name
-    real(fp)         :: data(:,:,:,:,:)
-
-    ! Note: Assumed shape array sections always start with index=1 for all dimensions
-    !       So we do not have to know start/end indices here
-    WRITE(*,'(A5,A17,5ES20.10)') "TEST ", name, minval(data), maxval(data), data(1,1,1,1,1),  &
-                            data(size(data,1), size(data,2), size(data,3), size(data,4), size(data,5)), &
-                            sqrt(sum(data**2) / size(data))
-
-  END SUBROUTINE print_5d_variable
-
-
 END MODULE my_kernels
 
 
@@ -554,6 +304,8 @@ PROGRAM test_kernels
   USE my_kernels
   USE omp_lib
   USE mt19937_64
+  USE crtm_type
+  USE crtm_utils
 
   !------- Test -------!
   INTEGER, PARAMETER :: N_LAYERS = MAX_N_LAYERS
@@ -621,9 +373,7 @@ PROGRAM test_kernels
   CALL mt19937_real2d(w_AD)
   CALL mt19937_real2d(T_OD_AD)
   CALL mt19937_real2d(Planck_Atmosphere_AD)
-
   PRINT*, "Finished filling arrays with random values."
-
 
   !---- fill RTV ----!
   DO t = 1, N_PROFILESxCHANNELS
@@ -635,7 +385,6 @@ PROGRAM test_kernels
   DO t = 1, N_PROFILESxCHANNELS
       CALL RTV_Create( RTV(t), MAX_N_ANGLES, MAX_N_LEGENDRE_TERMS, N_LAYERS )
   ENDDO
-
   PRINT*, "Finished creating RTV"
 
   !------- Print input state statistics -------!
@@ -669,32 +418,32 @@ PROGRAM test_kernels
     streamid = mod(t - 1,n_omp_threads)
 
     DO k = 1, N_LAYERS
-         streamid = k
-         CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
-                                     RTV(t)%n_Angles,                      & ! Input
-                                     k,                                    & ! Input
-                                     w( k, t ),                            & ! Input
-                                     T_OD( k, t ),                         & ! Input
-                                     RTV(t)%COS_Angle,                     & ! Input
-                                     RTV(t)%COS_Weight,                    & ! Input
-                                     RTV(t)%Pff( :, :, k ),                & ! Input
-                                     RTV(t)%Pbb( :, :, k ),                & ! Input
-                                     RTV(t)%Planck_Atmosphere( k ),        & ! Input
-                                     s_trans_AD( :, :, k, t ),             & ! Input / Output
-                                     s_refl_AD( :, :, k, t ),              & ! Input / Output
-                                     s_source_up_AD( :, k, t ),            & ! Input / Output
-                                     s_source_down_AD( :, k, t ),          & ! Input / Output
-                                     RTV(t),                               & ! Input
-                                     w_AD( k, t ),                         & ! Input / Output
-                                     T_OD_AD( k, t ),                      & ! Input / Output
-                                     Pff_AD( :, :, k, t ),                 & ! Input / Output
-                                     Pbb_AD( :, :, k, t ),                 & ! Input / Output
-                                     Planck_Atmosphere_AD( k, t ),         & ! Input / Output
-                                     streamid,                             & ! Input
-                                     term1, term2, term3, term4, term5_AD, & ! Output
-                                     trans1, trans3, trans4,               & ! Output
-                                     temp1, temp2, temp3,                  & ! Output
-                                     C1_AD, C2_AD)                           ! Output
+      streamid = k
+      CALL CRTM_Doubling_layer_AD(RTV(t)%n_Streams,                     & ! Input
+                                  RTV(t)%n_Angles,                      & ! Input
+                                  k,                                    & ! Input
+                                  w( k, t ),                            & ! Input
+                                  T_OD( k, t ),                         & ! Input
+                                  RTV(t)%COS_Angle,                     & ! Input
+                                  RTV(t)%COS_Weight,                    & ! Input
+                                  RTV(t)%Pff( :, :, k ),                & ! Input
+                                  RTV(t)%Pbb( :, :, k ),                & ! Input
+                                  RTV(t)%Planck_Atmosphere( k ),        & ! Input
+                                  s_trans_AD( :, :, k, t ),             & ! Input / Output
+                                  s_refl_AD( :, :, k, t ),              & ! Input / Output
+                                  s_source_up_AD( :, k, t ),            & ! Input / Output
+                                  s_source_down_AD( :, k, t ),          & ! Input / Output
+                                  RTV(t),                               & ! Input
+                                  w_AD( k, t ),                         & ! Input / Output
+                                  T_OD_AD( k, t ),                      & ! Input / Output
+                                  Pff_AD( :, :, k, t ),                 & ! Input / Output
+                                  Pbb_AD( :, :, k, t ),                 & ! Input / Output
+                                  Planck_Atmosphere_AD( k, t ),         & ! Input / Output
+                                  streamid,                             & ! Input
+                                  term1, term2, term3, term4, term5_AD, & ! Output
+                                  trans1, trans3, trans4,               & ! Output
+                                  temp1, temp2, temp3,                  & ! Output
+                                  C1_AD, C2_AD)                           ! Output
     ENDDO
 
   ENDDO
