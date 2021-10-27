@@ -192,7 +192,7 @@ MODULE my_kernels
     REAL(fp), INTENT( INOUT ) :: single_albedo_AD
     REAL(fp), INTENT( INOUT ) :: optical_depth_AD,Planck_Func_AD
     REAL(fp), INTENT(INOUT), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES+1) :: ff_AD,bb_AD
-!$acc declare copy(trans_AD,refl_AD,source_up_AD,source_down_AD,ff_AD,bb_AD)
+!$acc declare copy(trans_AD,refl_AD,source_up_AD,source_down_AD,single_albedo_AD,optical_depth_AD,ff_AD,bb_AD)
 
     ! internal variables
     REAL(fp), INTENT(OUT),DIMENSION(MAX_N_ANGLES,MAX_N_ANGLES) :: term1,term2,term3,term4,term5_AD
