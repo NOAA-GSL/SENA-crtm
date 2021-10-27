@@ -32,6 +32,7 @@ jobs:
           rm -rf build
           mkdir build
           cd build
+          export OMP_NUM_THREADS=4
           export CC=gcc-10
           export FC=gfortran-10          
           cmake -DCMAKE_BUILD_TYPE=debug ..
@@ -45,6 +46,7 @@ jobs:
           rm -rf build
           mkdir build
           cd build
+          export OMP_NUM_THREADS=4
           export CC=gcc-10
           export FC=gfortran-10           
           cmake -DCMAKE_BUILD_TYPE=release ..
@@ -69,6 +71,7 @@ jobs:
           rm -rf build
           mkdir build
           cd build
+          export OMP_NUM_THREADS=4
           export CC=gcc
           export FC=gfortran
           cmake -DCMAKE_BUILD_TYPE=debug ..
@@ -82,6 +85,7 @@ jobs:
           rm -rf build
           mkdir build
           cd build
+          export OMP_NUM_THREADS=4
           export CC=gcc
           export FC=gfortran
           cmake -DCMAKE_BUILD_TYPE=release ..
