@@ -38,8 +38,8 @@ This repository is organized as follows.
 
 ### `test/`
 
-Contains the reference test baselines, input and output data all implementations
-must use for testing and validation.
+Contains the reference test baselines all implementations must use for testing
+and validation.
 
 ### `ref/`
 
