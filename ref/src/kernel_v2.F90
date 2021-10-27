@@ -18,7 +18,7 @@ MODULE my_kernels
   !
   !************************************************************
   SUBROUTINE  myMATMUL(A, B, C)
-!$acc routine worker
+!$acc routine vector
     REAL(fp), INTENT(IN), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES) :: A, B
     REAL(fp), INTENT(OUT), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES) :: C
     REAL(fp) :: acc
@@ -44,7 +44,7 @@ MODULE my_kernels
   !
   !************************************************************
   SUBROUTINE myTRANSPOSE(A, At)
-!$acc routine worker
+!$acc routine vector
     REAL(fp), INTENT(IN), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES) :: A
     REAL(fp), INTENT(OUT), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES) :: At
     INTEGER :: I, J
@@ -64,7 +64,7 @@ MODULE my_kernels
   !
   !************************************************************
   SUBROUTINE myADD(A, B, C)
-!$acc routine worker
+!$acc routine vector
     REAL(fp), INTENT(IN), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES) :: A, B
     REAL(fp), INTENT(OUT), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES) :: C
     INTEGER :: I, J
@@ -177,7 +177,7 @@ MODULE my_kernels
                                Planck_Func_AD, & ! Output AD Planck for layer temperature
                                term1,term2,term3,term4,term5_AD,trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)   ! Temporaries
 
-!$acc routine worker
+!$acc routine vector
     INTEGER, INTENT(IN) :: n_streams,NANG,KL
     TYPE(RTV_type), INTENT(IN) :: RTV
     REAL(fp), INTENT(IN), DIMENSION(1:MAX_N_ANGLES,1:MAX_N_ANGLES+1) :: ff,bb
@@ -423,13 +423,14 @@ PROGRAM test_kernels
 !$acc                  s_source_UP_AD(:,:,s:e),s_source_DOWN_AD(:,:,s:e), &
 !$acc                  w(:,s:e), T_OD(:,s:e), w_AD(:,s:e), T_OD_AD(:,s:e), Planck_Atmosphere_AD(:,s:e))
 
-!$acc enter data copyin(RTV)
   ENDDO
 #endif
 
 !$acc wait
 
   !---- create RTV array ----!
+  !---- manual deepcopy with explicit attach ---- !
+  !---- For some reason implicit attach does not work ----!
   PRINT*, "Creating RTV"
   DO t = 1, N_PROFILESxCHANNELS
       gpuid = (t - 1) / N_PROFS_PER_GPU
@@ -437,6 +438,22 @@ PROGRAM test_kernels
       CALL acc_set_device_num(gpuid,acc_device_nvidia)
 #endif
       CALL RTV_Create( RTV(t), MAX_N_ANGLES, MAX_N_LEGENDRE_TERMS, N_LAYERS )
+  ENDDO
+
+#ifdef _OPENACC
+  DO gpuid = 0, N_GPUS - 1 
+     CALL acc_set_device_num(gpuid,acc_device_nvidia)
+!$acc enter data copyin(RTV)
+  ENDDO
+#endif
+
+  DO t = 1, N_PROFILESxCHANNELS
+      gpuid = (t - 1) / N_PROFS_PER_GPU
+#ifdef _OPENACC
+      CALL acc_set_device_num(gpuid,acc_device_nvidia)
+#endif
+!$acc enter data attach(RTV(t)%Pff,RTV(t)%Pbb,RTV(t)%Number_Doubling,RTV(t)%Delta_Tau, &
+!$acc                RTV(t)%Refl,RTV(t)%Trans,RTV(t)%Inv_BeT,RTV(t)%C1,RTV(t)%C2)
   ENDDO
   PRINT*, "Finished creating RTV"
 
