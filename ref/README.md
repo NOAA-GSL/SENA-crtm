@@ -101,10 +101,6 @@ To run a specific test with full output to get more information about a failure 
 $ ctest -VV -R cpu_kernel
 ```
 
-## Build and test script
-
-Coming soon.
-
 ## Installation and running
 
 To (optionally) install the built executable into exe/
