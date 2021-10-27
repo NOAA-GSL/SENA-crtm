@@ -15,42 +15,8 @@ The following packages are required for building and running this kernel:
 
 * C compiler
 * Fortran compiler (PGI is required for GPU support)
-* [netcdf-c](https://www.unidata.ucar.edu/downloads/netcdf/)
-* [netcdf-fortran](https://www.unidata.ucar.edu/downloads/netcdf/)
 * [cmake](https://cmake.org/download/) (version >= 3.10)
 * git
-* [git-lfs](https://git-lfs.github.com/)
-
-## Prerequisites
-This code requires git-lfs. Before cloning the repository, verify that git-lfs is installed, by issuing the following command. This only needs to be done once per user per machine.
-
-```bash
-$ git lfs install
-```
-
-If the above gives an error you (or your systems administrator) may need to install git-lfs.
-
-Some systems that use modules to manage software provide git with git-lfs support via a
-module (e.g. `module load git`).  If you are using a system that uses modules, use
-`module avail` to look for alternative versions of git that may have git-lfs support.
-
-Make sure the files in `test/data/inputs` are NetCDF data files (not text) before proceeding to
-the build step. A simple way to do that is with the file command as shown below:
-
-```
-Coming soon.
-```
-
-**NOTE**: If you cloned the repository with a version of git without git-lfs installed, or before you ran `git lfs install`, you
-must run the following command (with a version of git that does support git-lfs) from the base
-of the repository to fetch the input data before proceeding to the build steps. Or you can
-reclone the repository with git-lfs installed, instead.
-
-```bash
-$ git lfs pull
-```
-
-Alternatively, you can reclone the repository with git-lfs installed.
 
 ## Building the kernel
 
@@ -75,7 +41,7 @@ find dependencies, particularly if software depencencies are not installed in st
 See below for more information.
 
 NOTE: If GPU support is enabled, you must be on a machine that has GPU hardware and drivers as well as
-CUDA installed.
+CUDA installed.  Currently, GPU versions are only supported for the PGI/NVHPC compilers.
 
 ### Machines that use modules to manage software
 
@@ -84,17 +50,17 @@ the compiler and software you want to use before running the build steps above. 
 dependencies to be found properly.  For example:
 
 ```bash
-$ module load pgi cuda/10.1 cmake
+$ module load pgi/19.10 cuda/10.1 cmake
 ```
 
 ### Machines that do not use modules to manage software
 
-If compilers and/or NetCDF is not installed in a standard location where cmake can find it, you
-may need to add their installation paths to the `CMAKE_PREFIX_PATH` before running the steps
+If compilers or other dependencies are not installed in a standard location where cmake can find it,
+you may need to add their installation paths to the `CMAKE_PREFIX_PATH` before running the steps
 above. For example:
 
 ```bash
-$ export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/path/to/netcdf:/path/to/netcdf-fortran
+$ export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/path/to/pgi_compiler
 ```
 
 ### Building on a Mac
@@ -126,13 +92,13 @@ $ ctest
 To run a specific test (for example):
 
 ```bash
-$ ctest -R regression_cpu
+$ ctest -R cpu_kernel
 ```
 
 To run a specific test with full output to get more information about a failure (for example):
 
 ```bash
-$ ctest -VV -R regression_cpu
+$ ctest -VV -R cpu_kernel
 ```
 
 ## Build and test script
@@ -153,7 +119,7 @@ To run the installed executable (for example):
 $ export OMP_PLACES=cores
 $ export OMP_PROC_BIND=close
 $ export OMP_NUM_THREADS=4
-$ exe/crtm_kernel ../test/test_input/input
+$ exe/crtm_kernel_cpu
 ```
 
 ## NOTES:
@@ -166,40 +132,7 @@ $ exe/crtm_kernel ../test/test_input/input
 
 - `cmake/` contains compiler flag settings and cmake helper scripts
 - `src/` contains the kernel source code
-- `test/` contains the tests, test input, and test output
-- `test/data/outputs` is where test output data is written
-- `test/test_input` contains the test namelist input files
+- `test/` contains the tests and test output
 - `exe/` contains the installed executable
 
-## Troubleshooting
 
-1. All tests fail on my machine.
-
-    Check to make sure git-lfs is installed and that all files in `test/data/inputs` are NetCDF 
-    data files and are not text. Run `git lfs pull` to download NetCDF files if necessary.
-
-2. I get `Skipping object checkout, Git LFS is not installed.` when running `git lfs pull`
-
-    Run `git lfs install` to perform the one-time installation that git-lfs requires per user per machine.
-
-3. I get `git: 'lfs' is not a git command.` when running `git lfs pull`
-
-    Your version of git does not support git-lfs. Install git-lfs or load a version of git that supports it.
-
-4. I get `git-lfs smudge -- 'test/data/inputs/input.nc': git-lfs: command not found` when cloning.
-
-    Your version of git does not support git-lfs. Install git-lfs or load a version of git that supports it.
-
-5. I get unresolved symbols when testing / running the kernel
-
-    If you are on a machine that uses modules to manage software, you probably need to load the modules
-    for your compiler and/or NetCDF **(make sure to use the same modules to build, test, and run)**.  For example:
-    ```bash
-    $ module load intel netcdf
-    ```
-
-    If you are on a machine that does not use modules, you probably need to add the paths of your compiler
-    and/or NetCDF libraries to `LD_LIBRARY_PATH`.  For example:
-    ```bash
-    $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/netcdf-c/lib:/path/to/netcdf-fortran/lib
-    ```
