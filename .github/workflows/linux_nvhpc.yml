@@ -28,7 +28,7 @@ jobs:
         id: cache-nvchpc-sdk
         uses: actions/cache@v2
         with:
-          path: /opt/nvhpc
+          path: /opt/nvidia/hpc_sdk
           key: install-${{ env.NVIDIA_HPC_SDK_URL1 }}-${{ env.NVIDIA_HPC_SDK_URL2 }}-all
 
       # Install NVIDIA HPC SDK
@@ -43,7 +43,7 @@ jobs:
         run: |
           ls -l /opt
           ls -l /opt/nvidia
-          ls -l /opt/nvidia/nvhpc
+          ls -l /opt/nvidia/hpc_sdk
 
       # Check location of installed NVHPC compilers
       - name: Check compiler install
