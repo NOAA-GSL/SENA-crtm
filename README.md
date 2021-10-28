@@ -1,4 +1,8 @@
-[![CI for crtm](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/ci.yml/badge.svg)](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/ci.yml)
+[![Linux GNU](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/linux_gnu.yml/badge.svg)](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/linux_gnu.yml)
+[![Linux Intel](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/linux_intel.yml/badge.svg)](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/linux_intel.yml)
+[![Linux NVHPC](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/linux_nvhpc.yml/badge.svg)](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/linux_nvhpc.yml)
+[![MacOS GNU](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/macos_gnu.yml/badge.svg)](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/macos_gnu.yml)
+[![MacOS Intel](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/macos_intel.yml/badge.svg)](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/macos_intel.yml)
 
 ```
 This repository is a scientific product and is not official communication
