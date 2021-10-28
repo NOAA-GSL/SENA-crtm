@@ -54,7 +54,6 @@ jobs:
         run: |
           source /usr/share/lmod/lmod/init/bash
           module use /opt/nvidia/hpc_sdk/modulefiles
-          module av
           module load nvhpc
           which nvc
           which nvfortran
@@ -67,12 +66,13 @@ jobs:
       - name: Build crtm debug
         run: |
           source /usr/share/lmod/lmod/init/bash
+          module use /opt/nvidia/hpc_sdk/modulefiles
+          module load nvhpc
           cd ref
           rm -rf build
           mkdir build
           cd build
           export OMP_NUM_THREADS=4
-          module load nvhpc
           cmake -DCMAKE_BUILD_TYPE=debug ..
           make
           ctest --output-on-failure
@@ -81,12 +81,13 @@ jobs:
       - name: Build crtm release
         run: |
           source /usr/share/lmod/lmod/init/bash
+          module use /opt/nvidia/hpc_sdk/modulefiles
+          module load nvhpc
           cd ref
           rm -rf build
           mkdir build
           cd build
           export OMP_NUM_THREADS=4
-          module load nvhpc
           cmake -DCMAKE_BUILD_TYPE=release ..
           make
           ctest --output-on-failure
