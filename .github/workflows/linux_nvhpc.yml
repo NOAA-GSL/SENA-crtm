@@ -18,9 +18,6 @@ jobs:
     env:
       NVIDIA_HPC_SDK_URL1: https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-21-9_21.9_amd64.deb
       NVIDIA_HPC_SDK_URL2: https://developer.download.nvidia.com/hpc-sdk/21.9/nvhpc-2021_21.9_amd64.deb
-      CC: nvc
-      FC: nvfortran
-      CXX: nvc
 
     steps:
 
@@ -42,7 +39,7 @@ jobs:
 
       # Install NVIDIA HPC SDK
       - name: Install NVIDIA HPC SDK
-        if: steps.cache-intel-hpc-toolkit.outputs.cache-hit != 'true'
+        if: steps.cache-nvchpc-sdk.outputs.cache-hit != 'true'
         run: |
           wget "$NVIDIA_HPC_SDK_URL1" "$NVIDIA_HPC_SDK_URL2"
           sudo apt-get install ./nvhpc-21-9_21.9_amd64.deb ./nvhpc-2021_21.9_amd64.deb
@@ -57,6 +54,7 @@ jobs:
       # Check location of installed NVHPC compilers
       - name: Check compiler install
         run: |
+          source /usr/share/lmod/lmod/init/bash
           module use /opt/nvidia/hpc_sdk/modulefiles
           module av
           module load nvhpc
@@ -70,13 +68,13 @@ jobs:
       # Test debug mode
       - name: Build crtm debug
         run: |
+          source /usr/share/lmod/lmod/init/bash
           cd ref
           rm -rf build
           mkdir build
           cd build
           export OMP_NUM_THREADS=4
-          export CC=nvc
-          export FC=nvfortran
+          module load nvhpc
           cmake -DCMAKE_BUILD_TYPE=debug ..
           make
           ctest --output-on-failure
@@ -84,13 +82,13 @@ jobs:
       # Test release mode
       - name: Build crtm release
         run: |
+          source /usr/share/lmod/lmod/init/bash
           cd ref
           rm -rf build
           mkdir build
           cd build
           export OMP_NUM_THREADS=4
-          export CC=nvc
-          export FC=nvfortran
+          module load nvhpc
           cmake -DCMAKE_BUILD_TYPE=release ..
           make
           ctest --output-on-failure
