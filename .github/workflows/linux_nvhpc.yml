@@ -38,6 +38,12 @@ jobs:
           wget "$NVIDIA_HPC_SDK_URL1" "$NVIDIA_HPC_SDK_URL2"
           sudo apt-get install ./nvhpc-21-9_21.9_amd64.deb ./nvhpc-2021_21.9_amd64.deb
 
+      # Debug install
+      - name: Debug install
+        run: |
+          ls -l /opt
+          ls -l /
+
       # Check location of installed NVHPC compilers
       - name: Check compiler install
         run: |
