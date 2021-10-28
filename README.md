@@ -1,3 +1,5 @@
+[![CI for crtm](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/ci.yml/badge.svg)](https://github.com/NOAA-GSL/SENA-crtm/actions/workflows/ci.yml)
+
 ```
 This repository is a scientific product and is not official communication
 of the National Oceanic and Atmospheric Administration, or the United States
