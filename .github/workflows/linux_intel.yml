@@ -72,6 +72,7 @@ jobs:
       # Test release mode
       - name: Build crtm release
         run: |
+          source /opt/intel/oneapi/setvars.sh
           cd ref
           rm -rf build
           mkdir build
