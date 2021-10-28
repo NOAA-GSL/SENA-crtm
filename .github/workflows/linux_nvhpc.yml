@@ -29,6 +29,8 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install lmod
+          source /usr/share/lmod/lmod/init/bash
+          module list
 
       # Cache NVHPC SDK
       - name: Cache NVIDIA HPC SDK
