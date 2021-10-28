@@ -30,7 +30,6 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install lmod
-#          echo "source /usr/share/lmod/lmod/init/bash" >> ~/.bash_profile
           module list
 
       # Cache NVHPC SDK
