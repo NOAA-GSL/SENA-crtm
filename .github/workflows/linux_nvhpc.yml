@@ -30,6 +30,8 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install lmod
+          echo "source /usr/share/lmod/lmod/init/bash" >> ~/.bash_profile
+          source /usr/share/lmod/lmod/init/bash
           module list
 
       # Cache NVHPC SDK
@@ -46,13 +48,6 @@ jobs:
         run: |
           wget "$NVIDIA_HPC_SDK_URL1" "$NVIDIA_HPC_SDK_URL2"
           sudo apt-get install ./nvhpc-21-9_21.9_amd64.deb ./nvhpc-2021_21.9_amd64.deb
-
-      # Debug install
-      - name: Debug install
-        run: |
-          ls -l /opt
-          ls -l /opt/nvidia
-          ls -l /opt/nvidia/hpc_sdk
 
       # Check location of installed NVHPC compilers
       - name: Check compiler install
