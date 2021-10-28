@@ -7,6 +7,10 @@ on:
     branches: [ develop ]
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
@@ -26,20 +30,20 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install lmod
-          source /usr/share/lmod/lmod/init/bash
+#          echo "source /usr/share/lmod/lmod/init/bash" >> ~/.bash_profile
           module list
 
       # Cache NVHPC SDK
       - name: Cache NVIDIA HPC SDK
-        id: cache-nvchpc-sdk
+        id: cache-nvhpc-sdk
         uses: actions/cache@v2
         with:
-          path: /opt/nvidia/hpc_sdk
+          path: /opt/nvidia
           key: install-${{ env.NVIDIA_HPC_SDK_URL1 }}-${{ env.NVIDIA_HPC_SDK_URL2 }}-all
 
       # Install NVIDIA HPC SDK
       - name: Install NVIDIA HPC SDK
-        if: steps.cache-nvchpc-sdk.outputs.cache-hit != 'true'
+        if: steps.cache-nvhpc-sdk.outputs.cache-hit != 'true'
         run: |
           wget "$NVIDIA_HPC_SDK_URL1" "$NVIDIA_HPC_SDK_URL2"
           sudo apt-get install ./nvhpc-21-9_21.9_amd64.deb ./nvhpc-2021_21.9_amd64.deb
