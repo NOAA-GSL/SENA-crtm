@@ -23,6 +23,13 @@ jobs:
       CXX: nvc
 
     steps:
+
+      # Install Lmod
+      - name: Install Lmod
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install lmod
+
       # Cache NVHPC SDK
       - name: Cache NVIDIA HPC SDK
         id: cache-nvchpc-sdk
@@ -48,6 +55,9 @@ jobs:
       # Check location of installed NVHPC compilers
       - name: Check compiler install
         run: |
+          module use /opt/nvidia/hpc_sdk/modulefiles
+          module av
+          module load nvhpc
           which nvc
           which nvfortran
 
