@@ -496,7 +496,7 @@ PROGRAM test_kernels
 !$acc present(Pff_AD(:,:,:,t),Pbb_AD(:,:,:,t),s_Refl_AD(:,:,:,t),s_Trans_AD(:,:,:,t), &
 !$acc                  s_source_UP_AD(:,:,t),s_source_DOWN_AD(:,:,t), &
 !$acc                  w(:,t), T_OD(:,t), w_AD(:,t), T_OD_AD(:,t), Planck_Atmosphere_AD(:,t))
-!$acc loop private(k, &
+!$acc loop independent private(k, &
 !$acc            term1,term2,term3,term4,term5_AD, &
 !$acc            trans1,trans3,trans4,temp1,temp2,temp3,C1_AD,C2_AD)
     DO k = 1, N_LAYERS
