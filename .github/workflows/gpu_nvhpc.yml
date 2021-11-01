@@ -27,8 +27,6 @@ jobs:
           pwd
           ls -al
           echo $SHELL
-#          echo "source /usr/share/lmod/lmod/init/bash" >> ~/.bash_profile
-#          source /usr/share/lmod/lmod/init/bash
           module use /opt/nvidia/hpc_sdk/modulefiles
           module load nvhpc
           which nvc
