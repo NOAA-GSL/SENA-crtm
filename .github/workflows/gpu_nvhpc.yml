@@ -24,6 +24,7 @@ jobs:
       # Load NVHPC module
       - name: Load NVHPC Module
         run: |
+          source /usr/share/lmod/lmod/init/bash
           module use /opt/nvidia/hpc_sdk/modulefiles
           module load nvhpc
           which nvc
@@ -36,6 +37,7 @@ jobs:
       # Test debug mode
       - name: Build crtm debug
         run: |
+          source /usr/share/lmod/lmod/init/bash
           module use /opt/nvidia/hpc_sdk/modulefiles
           module load nvhpc
           cd ref
@@ -50,6 +52,7 @@ jobs:
       # Test release mode
       - name: Build crtm release
         run: |
+          source /usr/share/lmod/lmod/init/bash
           module use /opt/nvidia/hpc_sdk/modulefiles
           module load nvhpc
           cd ref
