@@ -9,7 +9,7 @@ on:
 
 defaults:
   run:
-    shell: bash -le
+    shell: bash -leo pipefail {0}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -25,11 +25,11 @@ jobs:
       - name: Load NVHPC Module
         run: |
           echo "source /usr/share/lmod/lmod/init/bash" >> ~/.bash_profile
-          source /usr/share/lmod/lmod/init/bash
-          module use /opt/nvidia/hpc_sdk/modulefiles
-          module load nvhpc
-          which nvc
-          which nvfortran
+#          source /usr/share/lmod/lmod/init/bash
+#          module use /opt/nvidia/hpc_sdk/modulefiles
+#          module load nvhpc
+#          which nvc
+#          which nvfortran
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
