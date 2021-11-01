@@ -24,6 +24,9 @@ jobs:
       # Load NVHPC module
       - name: Load NVHPC Module
         run: |
+          pwd
+          ls -al
+          echo $SHELL
           echo "source /usr/share/lmod/lmod/init/bash" >> ~/.bash_profile
 #          source /usr/share/lmod/lmod/init/bash
 #          module use /opt/nvidia/hpc_sdk/modulefiles
