@@ -1,10 +1,9 @@
 name: Linux GPU NVHPC
 # triggered events (push, pull_request) for the develop branch
 on:
-  push:
-    branches: [ develop ]
   pull_request:
     branches: [ develop ]
+    types: [ labeled ]
   workflow_dispatch:
 
 #defaults:
@@ -15,6 +14,8 @@ on:
 jobs:
 
   GPU_build:
+    if: ${{ github.event.label.name == 'GPU_Test' }}
+
     name: GPU Build
     # Run on self-hosted
     runs-on: self-hosted
@@ -36,21 +37,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Test debug mode
-      - name: Build crtm debug
-        run: |
-          source /usr/share/lmod/lmod/init/bash
-          module use /opt/nvidia/hpc_sdk/modulefiles
-          module load nvhpc
-          cd ref
-          rm -rf build
-          mkdir build
-          cd build
-          export OMP_NUM_THREADS=4
-          cmake -DCMAKE_BUILD_TYPE=debug -DENABLE_GPU=on ..
-          make
-          ctest --output-on-failure
-
       # Test release mode
       - name: Build crtm release
         run: |
@@ -64,4 +50,4 @@ jobs:
           export OMP_NUM_THREADS=4
           cmake -DCMAKE_BUILD_TYPE=release -DENABLE_GPU=on ..
           make
-          ctest --output-on-failure
+          ctest --output-on-failure -R gpu_kernel
